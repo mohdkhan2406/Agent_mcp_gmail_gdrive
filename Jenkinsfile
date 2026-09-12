@@ -223,11 +223,12 @@ pipeline {
                     sh '''
                         set -e
 
-                        # Jenkins runs in a container but drives the HOST
-                        # daemon, so compose paths must be host paths.
-                        # Everything below therefore lives under APP_DIR
-                        # on the host, bind-mounted the same way.
-                        mkdir -p "${APP_DIR}/secrets"
+                        sudo mkdir -p "${APP_DIR}/secrets"
+
+                        # Secrets are owned by the container user (10001)
+                        # after a previous deploy, so take them back
+                        # before rewriting them.
+                        sudo chown -R "$(id -u):$(id -g)" "${APP_DIR}"
 
                         cp docker-compose.yml "${APP_DIR}/"
                         cp -r backend frontend "${APP_DIR}/"
@@ -239,8 +240,7 @@ pipeline {
 
                         # token.json is rewritten when the access token
                         # refreshes, so the container user must own it.
-                        chown -R 10001:10001 "${APP_DIR}/secrets" 2>/dev/null || \
-                            echo "WARN: could not chown secrets; token refresh may fail"
+                        sudo chown -R 10001:10001 "${APP_DIR}/secrets"
 
                         cd "${APP_DIR}"
 
@@ -326,10 +326,11 @@ pipeline {
             steps {
                 script {
                     if (params.DEPLOY_MODE == 'local') {
-                        // Jenkins is containerised, so 127.0.0.1 here is
-                        // not the host. Check container health through
-                        // the daemon, then exercise the nginx -> backend
-                        // path from inside the frontend container.
+                        // Check health through the daemon, then exercise
+                        // the nginx -> backend path from inside the
+                        // frontend container. Going through Docker works
+                        // whether Jenkins is native on the host or in a
+                        // container, where 127.0.0.1 is not the host.
                         sh '''
                             set -e
 

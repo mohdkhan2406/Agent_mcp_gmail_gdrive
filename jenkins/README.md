@@ -1,4 +1,9 @@
-# Jenkins setup (on the EC2 host)
+# Jenkins setup (containerised, on the EC2 host)
+
+> This is the **alternative** setup: Jenkins itself runs in
+> Docker. For the native apt install (Jenkins installed
+> directly on the instance), see [../deploy/README.md](../deploy/README.md).
+> Use one or the other, not both -- they would fight over port 8080.
 
 Jenkins runs in Docker on the EC2 box and deploys the app to that
 same box. Images are built by Jenkins, pushed to Docker Hub, then
