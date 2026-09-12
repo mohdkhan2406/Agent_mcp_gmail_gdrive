@@ -12,13 +12,33 @@ Use one or the other, not both — they would fight over port 8080.
 | Setting | Value |
 |---|---|
 | AMI | Ubuntu Server 24.04 LTS |
-| Instance type | **t3.small or larger** |
-| Storage | 20 GiB gp3 |
+| Instance type | **t3.small or larger** (2 GB RAM) |
+| Storage | **20 GiB gp3 — change this at launch** |
 | Key pair | `agentic_gmail_gdrive.pem` |
+
+> **The storage default is 8 GiB, which is not enough.** Raise it to
+> 20 GiB under *Configure storage* before launching. Jenkins, Java,
+> Docker, both images and the build cache do not fit in 8 GiB, and a
+> full root volume shows up as confusing build failures rather than a
+> clear "disk full". Growing the volume later means resizing the EBS
+> volume and the filesystem — easier to get right up front.
 
 > **t2.micro / t3.micro will not work.** The frontend image runs a
 > Vite production build, and Node runs out of memory on 1 GB. The
 > reference uses t3.small (2 GB) for the same reason.
+
+Rough disk budget for the 20 GiB:
+
+| Item | Size |
+|---|---|
+| Ubuntu + Java + Jenkins + Docker | ~4 GB |
+| Backend image | 511 MB |
+| Frontend image | 74 MB |
+| Build cache, layers, npm/pip downloads | ~5-8 GB |
+| Headroom | remainder |
+
+The pipeline runs `docker image prune -f` after each deploy, which
+keeps old tagged images from accumulating.
 
 ### Security group inbound rules
 

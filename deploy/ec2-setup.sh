@@ -14,6 +14,43 @@
 set -euo pipefail
 
 echo "=============================================="
+echo " 0/6  Preflight"
+echo "=============================================="
+
+# A full root volume surfaces as confusing build failures rather
+# than a clear "disk full", so check before installing anything.
+ROOT_GB=$(df -BG / | tail -1 | awk '{print $2}' | tr -dc '0-9')
+
+# /proc/meminfo rather than free(1): always present on Linux, and
+# one less package assumption on a bare AMI.
+RAM_MB=$(awk '/^MemTotal:/ {print int($2/1024)}' /proc/meminfo)
+
+: "${ROOT_GB:?could not determine root volume size}"
+: "${RAM_MB:?could not determine RAM size}"
+
+echo "Root volume: ${ROOT_GB} GB"
+echo "RAM:         ${RAM_MB} MB"
+
+if [ "${ROOT_GB}" -lt 18 ]; then
+    echo
+    echo "ERROR: root volume is ${ROOT_GB} GB; at least 20 GB is needed."
+    echo "Jenkins, Java, Docker, both images and the build cache will"
+    echo "not fit. Relaunch with 20 GiB, or grow the EBS volume and run:"
+    echo "    sudo growpart /dev/nvme0n1 1 && sudo resize2fs /dev/nvme0n1p1"
+    exit 1
+fi
+
+if [ "${RAM_MB}" -lt 1800 ]; then
+    echo
+    echo "ERROR: ${RAM_MB} MB RAM. The frontend Vite build will be"
+    echo "OOM-killed below ~2 GB. Use t3.small or larger."
+    exit 1
+fi
+
+echo "Preflight OK."
+echo
+
+echo "=============================================="
 echo " 1/6  System packages"
 echo "=============================================="
 
