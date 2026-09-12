@@ -1,0 +1,16 @@
+workflow-aggregator
+git
+github
+github-branch-source
+credentials
+credentials-binding
+plain-credentials
+ssh-credentials
+ssh-agent
+docker-workflow
+pipeline-stage-view
+timestamper
+ws-cleanup
+build-timeout
+matrix-auth
+configuration-as-code

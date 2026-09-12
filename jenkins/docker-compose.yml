@@ -1,0 +1,48 @@
+# ==============================================================
+# Jenkins controller, to run ON the EC2 host.
+#
+#   cd jenkins
+#   DOCKER_GID=$(getent group docker | cut -d: -f3) docker compose up -d
+#
+# Then open http://<EC2_PUBLIC_IP>:8080 and unlock with:
+#
+#   docker exec jenkins cat /var/jenkins_home/secrets/initialAdminPassword
+#
+# SECURITY: port 8080 is published to the world below. Restrict it
+# to your own IP in the instance's security group, or put it behind
+# a reverse proxy with TLS. An open Jenkins is a remote shell.
+# ==============================================================
+
+services:
+
+  jenkins:
+    build:
+      context: .
+    image: agent-jenkins:latest
+    container_name: jenkins
+    restart: unless-stopped
+
+    environment:
+      # Jenkins' own JVM, not the builds.
+      JAVA_OPTS: "-Djenkins.install.runSetupWizard=true -Dhudson.model.DownloadService.noSignatureCheck=true"
+
+    # Jenkins builds images using the HOST's docker daemon rather
+    # than running a daemon of its own. That means any job can
+    # control Docker on this box -- keep the instance locked down.
+    volumes:
+      - jenkins_home:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+
+    # The jenkins user must be in the host's docker group to use the
+    # socket. Pass the host GID in rather than hardcoding it:
+    #   DOCKER_GID=$(getent group docker | cut -d: -f3)
+    group_add:
+      - "${DOCKER_GID:-988}"
+
+    ports:
+      - "${JENKINS_PORT:-8080}:8080"
+      # Inbound agents. Only needed if you add build agents later.
+      - "127.0.0.1:50000:50000"
+
+volumes:
+  jenkins_home:
