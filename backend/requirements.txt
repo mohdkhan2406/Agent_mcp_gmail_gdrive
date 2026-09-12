@@ -1,0 +1,17 @@
+fastapi
+uvicorn
+python-dotenv
+
+openai
+langchain
+langchain-core
+langchain-openai
+langgraph
+langchain-mcp-adapters
+
+mcp
+
+google-api-python-client
+google-auth
+google-auth-httplib2
+google-auth-oauthlib
