@@ -1,0 +1,65 @@
+# ==============================================================
+# Agent MCP -- Gmail + Google Drive
+#
+# Secrets are mounted at runtime, never baked into an image.
+# Put credentials.json, token.json and .env in ./secrets on the
+# host before starting.
+#
+# token.json must be WRITABLE by the container user (uid 10001),
+# because an expired access token is refreshed and written back:
+#
+#   sudo chown -R 10001:10001 ./secrets
+# ==============================================================
+
+services:
+
+  backend:
+    build:
+      context: ./backend
+    image: ${BACKEND_IMAGE:-agent-gmail-gdrive-backend:latest}
+    container_name: agent-backend
+    restart: unless-stopped
+
+    env_file:
+      - ./secrets/.env
+
+    environment:
+      GOOGLE_CREDENTIALS_FILE: /secrets/credentials.json
+      GOOGLE_TOKEN_FILE: /secrets/token.json
+
+    volumes:
+      - ./secrets:/secrets
+
+    expose:
+      - "8000"
+
+    # Published on loopback only. The browser reaches the API
+    # through nginx at /api, so the port need not be public.
+    # Override BACKEND_PORT if 8001 is taken on the host.
+    ports:
+      - "127.0.0.1:${BACKEND_PORT:-8001}:8000"
+
+    networks:
+      - agentnet
+
+  frontend:
+    build:
+      context: ./frontend
+    image: ${FRONTEND_IMAGE:-agent-gmail-gdrive-frontend:latest}
+    container_name: agent-frontend
+    restart: unless-stopped
+
+    depends_on:
+      backend:
+        condition: service_healthy
+
+    # Set FRONTEND_PORT=80 on the deploy host.
+    ports:
+      - "${FRONTEND_PORT:-8080}:80"
+
+    networks:
+      - agentnet
+
+networks:
+  agentnet:
+    driver: bridge

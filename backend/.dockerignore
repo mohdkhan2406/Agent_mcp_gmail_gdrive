@@ -1,0 +1,13 @@
+# Secrets -- never bake these into an image
+.env
+.env.*
+!.env.example
+credentials.json
+token.json
+*.pem
+*.key
+
+venv/
+__pycache__/
+*.py[cod]
+*.log

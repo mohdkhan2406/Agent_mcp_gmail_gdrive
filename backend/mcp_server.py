@@ -1,3 +1,4 @@
+import os
 import re
 
 from email.utils import parseaddr
@@ -43,9 +44,21 @@ SCOPES = [
 
 BASE_DIR = Path(__file__).resolve().parent
 
-CREDENTIALS_FILE = BASE_DIR / "credentials.json"
+# Overridable so the container can mount secrets somewhere writable
+# without baking them into the image.
+CREDENTIALS_FILE = Path(
+    os.environ.get(
+        "GOOGLE_CREDENTIALS_FILE",
+        BASE_DIR / "credentials.json"
+    )
+)
 
-TOKEN_FILE = BASE_DIR / "token.json"
+TOKEN_FILE = Path(
+    os.environ.get(
+        "GOOGLE_TOKEN_FILE",
+        BASE_DIR / "token.json"
+    )
+)
 
 
 # ============================================================

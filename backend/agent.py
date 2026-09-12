@@ -1,3 +1,4 @@
+import os
 import re
 import sys
 from contextlib import asynccontextmanager
@@ -89,7 +90,13 @@ async def lifespan(app: FastAPI):
 
             "args": [
                 str(MCP_SERVER)
-            ]
+            ],
+
+            # The MCP stdio client forwards only HOME and PATH by
+            # default, so GOOGLE_CREDENTIALS_FILE / GOOGLE_TOKEN_FILE
+            # would never reach the server. Pass the environment on
+            # explicitly.
+            "env": dict(os.environ)
 
         }
 

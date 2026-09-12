@@ -42,3 +42,6 @@ Thumbs.db
 *.log
 npm-debug.log*
 _srv.log
+
+# Runtime secrets mounted into containers
+secrets/
